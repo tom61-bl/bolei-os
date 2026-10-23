@@ -1,0 +1,1077 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BOLEI.OS — 博磊的个人作品集</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%230a0e14'/><text x='50' y='68' font-size='58' text-anchor='middle' fill='%2300ff9c' font-family='monospace' font-weight='bold'>_&gt;</text></svg>">
+<link rel="stylesheet" href="https://miaoda.feishu.cn/fonts/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Noto+Sans+SC:wght@300;400;500;700&display=swap">
+<style>
+/* ============ BOLEI.OS 极客黑客风 ============ */
+:root {
+  --bg: #0a0e14;
+  --panel: #0d1219;
+  --panel-hover: #111823;
+  --line: rgba(0, 255, 156, 0.18);
+  --line-soft: rgba(0, 255, 156, 0.08);
+  --green: #00ff9c;
+  --green-dim: rgba(0, 255, 156, 0.55);
+  --cyan: #4dd0e1;
+  --amber: #ffb454;
+  --pink: #ff5c8a;
+  --text: #c8d3e0;
+  --text-dim: #6b7a8f;
+  --text-faint: #4a5568;
+  --mono: 'JetBrains Mono', 'Noto Sans SC', Consolas, 'Courier New', monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 15px;
+  line-height: 1.7;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* 背景网格点阵 */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: radial-gradient(rgba(0,255,156,0.045) 1px, transparent 1px);
+  background-size: 26px 26px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* 极淡CRT扫描线，仅深色面板上可见 */
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  background: repeating-linear-gradient(0deg, rgba(255,255,255,0.018) 0px, rgba(255,255,255,0.018) 1px, transparent 1px, transparent 3px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+::selection { background: rgba(0,255,156,0.25); color: #eafff5; }
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: rgba(0,255,156,0.2); border: 2px solid var(--bg); }
+::-webkit-scrollbar-thumb:hover { background: rgba(0,255,156,0.4); }
+
+a { color: var(--cyan); text-decoration: none; }
+a:hover { color: var(--green); text-decoration: underline; text-underline-offset: 3px; }
+
+/* ============ 开机 Boot Sequence ============ */
+#boot {
+  position: fixed; inset: 0;
+  background: var(--bg);
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  cursor: pointer;
+}
+#boot.hidden { display: none; }
+#boot .boot-inner {
+  width: min(720px, 92vw);
+  max-height: 80vh;
+  overflow: hidden;
+  text-align: left;
+  font-size: 14px;
+  color: var(--text);
+}
+#boot .boot-inner p { margin: 2px 0; white-space: pre-wrap; word-break: break-all; }
+#boot .boot-ok { color: var(--green); text-shadow: 0 0 6px rgba(0,255,156,0.35); }
+#boot .boot-dim { color: var(--text-dim); }
+#boot .boot-cursor { display: inline-block; width: 9px; height: 16px; background: var(--green); vertical-align: middle; animation: blink 1s steps(1) infinite; }
+#boot .boot-hint { margin-top: 22px; color: var(--text-faint); font-size: 12.5px; animation: blink 1.4s steps(1) infinite; }
+
+@keyframes blink { 0%, 50% { opacity: 1; } 50.01%, 100% { opacity: 0; } }
+
+/* ============ 终端窗口框架 ============ */
+#terminal {
+  position: relative;
+  z-index: 1;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 28px 18px 40px;
+}
+.term-window {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.4), 0 20px 60px rgba(0,0,0,0.45), 0 0 40px rgba(0,255,156,0.05);
+  overflow: hidden;
+}
+.term-titlebar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: var(--panel-hover);
+  border-bottom: 1px solid var(--line-soft);
+  user-select: none;
+}
+.term-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+.term-dot.red { background: #ff5f57; }
+.term-dot.yellow { background: #febc2e; }
+.term-dot.green { background: #28c840; }
+.term-title {
+  margin-left: 10px;
+  color: var(--text-dim);
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.term-body { padding: 0 20px 20px; }
+
+/* 导航命令 */
+.term-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 14px 0 12px;
+  border-bottom: 1px solid var(--line-soft);
+  position: sticky;
+  top: 0;
+  background: var(--panel);
+  z-index: 5;
+}
+.nav-cmd {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--text-dim);
+  padding: 4px 12px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  background: none;
+  transition: all 0.18s;
+  white-space: nowrap;
+}
+.nav-cmd:hover { color: var(--green); border-color: var(--line); background: rgba(0,255,156,0.05); }
+.nav-cmd .dollar { color: var(--green); }
+
+/* 通用 section */
+section { padding: 40px 0 8px; }
+.cmdline {
+  font-size: 16px;
+  color: var(--text);
+  margin-bottom: 18px;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.cmdline .prompt { color: var(--green); white-space: nowrap; }
+.cmdline .cmd { color: #eafff5; font-weight: 700; }
+.cmdline .arg { color: var(--cyan); }
+.cmdline .cursor-b { display: inline-block; width: 9px; height: 17px; background: var(--green); animation: blink 1s steps(1) infinite; vertical-align: middle; }
+
+/* ASCII art */
+.ascii-wrap { overflow: hidden; margin-bottom: 18px; }
+.ascii-art {
+  font-size: clamp(9px, 1.6vw, 20px);
+  line-height: 1.12;
+  color: var(--green);
+  text-shadow: 0 0 8px rgba(0,255,156,0.35);
+  white-space: pre;
+  letter-spacing: 1px;
+  user-select: none;
+}
+.ascii-sub { color: var(--text-dim); font-size: 13px; margin-top: 4px; }
+
+/* 信息输出块 */
+.info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; }
+.info-col { min-width: 0; }
+.keyval { display: grid; grid-template-columns: 110px 1fr; gap: 6px 14px; font-size: 14px; margin-bottom: 20px; }
+.keyval .k { color: var(--text-dim); }
+.keyval .k::before { content: '> '; color: var(--green-dim); }
+.keyval .v { color: var(--text); word-break: break-all; }
+
+.tags-row { display: flex; flex-wrap: wrap; gap: 10px; margin: 16px 0 6px; }
+.tag {
+  font-size: 13px;
+  padding: 4px 12px;
+  border-radius: 4px;
+  border: 1px solid var(--line);
+  background: rgba(0,255,156,0.05);
+  color: var(--green);
+  cursor: default;
+  position: relative;
+}
+.tag:hover { background: rgba(0,255,156,0.12); }
+.tag-note {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  width: 220px;
+  padding: 8px 10px;
+  background: var(--panel-hover);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--text);
+  z-index: 10;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+}
+.tag:hover .tag-note { display: block; }
+.tag-note::after {
+  content: '';
+  position: absolute;
+  top: 100%; left: 20px;
+  border: 6px solid transparent;
+  border-top-color: var(--line);
+}
+
+.quote-box {
+  border-left: 2px solid var(--green);
+  padding: 8px 16px;
+  margin: 14px 0;
+  color: var(--text);
+  font-size: 14px;
+  background: rgba(0,255,156,0.03);
+}
+.quote-box .q-mark { color: var(--green-dim); }
+
+/* 进程列表 */
+.proc-list { display: flex; flex-direction: column; gap: 8px; }
+.proc-row {
+  display: grid;
+  grid-template-columns: 12px 190px 1fr auto;
+  gap: 12px;
+  align-items: baseline;
+  padding: 10px 14px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  transition: border-color 0.18s, background 0.18s;
+  font-size: 13.5px;
+}
+.proc-row:hover { border-color: var(--line); background: rgba(0,255,156,0.03); }
+.proc-dot { width: 9px; height: 9px; border-radius: 50%; align-self: center; }
+.proc-dot.on { background: var(--green); box-shadow: 0 0 8px rgba(0,255,156,0.7); }
+.proc-dot.wip { background: var(--amber); box-shadow: 0 0 8px rgba(255,180,84,0.5); }
+.proc-name { color: #eafff5; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.proc-desc { color: var(--text-dim); }
+.proc-status {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+.proc-status.run { color: var(--green); border: 1px solid rgba(0,255,156,0.35); }
+.proc-status.learn { color: var(--amber); border: 1px solid rgba(255,180,84,0.35); }
+
+/* 配置注释风格 */
+.conf-block { font-size: 14px; }
+.conf-comment { color: var(--text-faint); }
+.conf-comment::before { content: '# '; }
+.conf-key { color: var(--cyan); }
+.conf-val { color: var(--text); }
+.conf-pipe { color: var(--text-dim); }
+.conf-row { padding: 3px 0; }
+.conf-sec { color: var(--green); font-weight: 700; margin: 16px 0 6px; font-size: 13.5px; letter-spacing: 0.5px; }
+.conf-sec::before { content: '## '; }
+
+/* Roadmap 时间线 */
+.timeline { position: relative; padding-left: 28px; margin-top: 8px; }
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 6.5px; top: 6px; bottom: 6px;
+  width: 2px;
+  background: var(--line);
+}
+.tl-item { position: relative; padding-bottom: 22px; }
+.tl-item::before {
+  content: '';
+  position: absolute;
+  left: -26px; top: 6px;
+  width: 11px; height: 11px;
+  box-sizing: border-box;
+  border: 2px solid var(--green);
+  border-radius: 50%;
+  background: var(--bg);
+}
+.tl-item:last-child { padding-bottom: 0; }
+.tl-num { color: var(--green-dim); font-size: 12px; }
+.tl-title { color: #eafff5; font-weight: 700; font-size: 15px; margin: 2px 0 4px; }
+.tl-desc { color: var(--text-dim); font-size: 13.5px; }
+
+/* 项目卡片 */
+.project-group { margin-bottom: 30px; }
+.pg-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--green);
+  font-weight: 700;
+  font-size: 14.5px;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+}
+.pg-head .ls { color: var(--text-faint); font-weight: 400; }
+.pg-head .total { color: var(--text-dim); font-weight: 400; font-size: 12.5px; }
+.project-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+.project-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px 16px 14px;
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  background: rgba(255,255,255,0.015);
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s, transform 0.2s;
+}
+.project-card:hover {
+  border-color: var(--line);
+  background: var(--panel-hover);
+  box-shadow: 0 0 18px rgba(0,255,156,0.07);
+  transform: translateY(-2px);
+}
+.project-card.featured { border-color: var(--line); }
+.pc-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.pc-icon { color: var(--cyan); font-size: 13px; }
+.pc-name { color: #eafff5; font-weight: 700; font-size: 14.5px; }
+.pc-status {
+  margin-left: auto;
+  font-size: 11px;
+  padding: 2px 7px;
+  border-radius: 3px;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+.pc-status.live { color: var(--green); border: 1px solid rgba(0,255,156,0.4); }
+.pc-status.private { color: var(--amber); border: 1px solid rgba(255,180,84,0.4); }
+.pc-desc { color: var(--text-dim); font-size: 13px; flex: 1; }
+.pc-meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12px; }
+.pc-meta .lang {
+  display: inline-flex; align-items: center; gap: 5px;
+  color: var(--text);
+  border: 1px solid rgba(255,255,255,0.12);
+  padding: 2px 8px;
+  border-radius: 3px;
+}
+.lang-dot { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+.pc-links { display: flex; gap: 12px; font-size: 13px; }
+.pc-links a::before { content: '→ '; color: var(--green-dim); }
+
+/* 命令行交互区 */
+#cmdline-wrap { padding: 16px 0 6px; }
+.cl-input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 10px 14px;
+  background: rgba(0,0,0,0.3);
+}
+.cl-input-row .prompt { color: var(--green); white-space: nowrap; font-size: 14px; }
+.cl-input {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  color: #eafff5;
+  font-family: var(--mono);
+  font-size: 14px;
+  caret-color: var(--green);
+}
+.cl-log { margin-top: 10px; font-size: 13px; color: var(--text-dim); }
+.cl-log p { margin: 2px 0; white-space: pre-wrap; word-break: break-all; }
+.cl-log .green { color: var(--green); }
+.cl-log .amber { color: var(--amber); }
+.cl-log .cyan { color: var(--cyan); }
+.cl-log .pink { color: var(--pink); }
+
+/* 联系区 */
+.contact-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 14px; }
+.contact-card {
+  padding: 14px 16px;
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  background: rgba(255,255,255,0.015);
+}
+.contact-card .cc-label { color: var(--text-faint); font-size: 12px; margin-bottom: 4px; }
+.contact-card .cc-value { color: var(--text); font-size: 14px; word-break: break-all; }
+.contact-card .cc-value a { color: var(--cyan); }
+
+footer {
+  padding: 24px 0 40px;
+  text-align: center;
+  color: var(--text-faint);
+  font-size: 12.5px;
+}
+footer .f-comment { color: var(--text-faint); }
+footer .f-green { color: var(--green-dim); }
+
+/* ============ 响应式 ============ */
+@media (max-width: 820px) {
+  body { font-size: 14px; }
+  #terminal { padding: 14px 8px 30px; }
+  .term-body { padding: 0 12px 14px; }
+  .info-grid { grid-template-columns: 1fr; gap: 16px; }
+  .proc-row { grid-template-columns: 12px 130px 1fr; }
+  .proc-status { grid-column: 2 / -1; justify-self: start; }
+  .project-grid { grid-template-columns: 1fr; }
+  .ascii-art { font-size: 9px; }
+  .keyval { grid-template-columns: 90px 1fr; }
+  .term-nav { position: static; flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .nav-cmd { flex-shrink: 0; }
+}
+
+/* 尊重 reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .cursor-b, #boot .boot-cursor, #boot .boot-hint { animation: none; opacity: 1; }
+}
+</style>
+</head>
+<body>
+
+<!-- ===== Boot Sequence ===== -->
+<div id="boot" onclick="skipBoot()">
+  <div class="boot-inner" id="bootLines"></div>
+</div>
+
+<!-- ===== 终端主界面 ===== -->
+<div id="terminal">
+  <div class="term-window">
+    <div class="term-titlebar">
+      <span class="term-dot red"></span>
+      <span class="term-dot yellow"></span>
+      <span class="term-dot green"></span>
+      <span class="term-title">bolei@portfolio: ~ — zsh</span>
+    </div>
+    <div class="term-body">
+
+      <div class="term-nav" id="termNav">
+        <button class="nav-cmd" data-cmd="whoami"><span class="dollar">$</span> whoami</button>
+        <button class="nav-cmd" data-cmd="now"><span class="dollar">$</span> ps aux</button>
+        <button class="nav-cmd" data-cmd="interests"><span class="dollar">$</span> cat interests.conf</button>
+        <button class="nav-cmd" data-cmd="direction"><span class="dollar">$</span> cat roadmap.md</button>
+        <button class="nav-cmd" data-cmd="projects"><span class="dollar">$</span> ls -la ~/projects</button>
+        <button class="nav-cmd" data-cmd="contact"><span class="dollar">$</span> contact</button>
+      </div>
+
+      <!-- Section 01 我是谁 -->
+      <section id="whoami">
+        <div class="cmdline">
+          <span class="prompt">bolei@portfolio:~$</span>
+          <span class="cmd">whoami</span>
+          <span class="cursor-b"></span>
+        </div>
+        <div class="ascii-wrap">
+<pre class="ascii-art">
+██████╗  ██████╗ ██╗     ███████╗██╗
+██╔══██╗██╔═══██╗██║     ██╔════╝██║
+██████╔╝██║   ██║██║     █████╗  ██║
+██╔══██╗██║   ██║██║     ██╔══╝  ╚═╝
+██████╔╝╚██████╔╝███████╗███████╗██╗
+╚═════╝  ╚═════╝ ╚══════╝╚══════╝╚═╝</pre>
+        </div>
+        <div class="ascii-sub">// 一个在 ICU 与互联网之间来回切换的灵魂</div>
+        <div class="info-grid">
+          <div class="info-col">
+            <div class="keyval">
+              <span class="k">name</span><span class="v">博磊 · Tom Boklei</span>
+              <span class="k">location</span><span class="v">杭州</span>
+              <span class="k">status</span><span class="v">杭州医学院 护理专业大四 · ICU 实习中</span>
+              <span class="k">trajectory</span><span class="v">护理 → 互联网运营 / AI Agent / 市场营销</span>
+              <span class="k">github</span><span class="v"><a href="https://github.com/tom61-bl" target="_blank" rel="noopener">github.com/tom61-bl</a></span>
+            </div>
+            <div class="tags-row">
+              <span class="tag">美的布道者<span class="tag-note">受够了千篇一律的古镇古街，用 GitHub 项目做基础美学科普</span></span>
+              <span class="tag">医学生<span class="tag-note">护理专业，ICU 实习，见过凌晨的监护仪</span></span>
+              <span class="tag">生活家<span class="tag-note">做饭、阅读、和朋友聊天散步，就觉得很幸福</span></span>
+            </div>
+          </div>
+          <div class="info-col">
+            <div class="quote-box">
+              <span class="q-mark">“</span> 美是可以被科普的，生活是可以被认真对待的。<span class="q-mark">”</span>
+            </div>
+            <div class="keyval">
+              <span class="k">believe</span><span class="v">基础的美学与科学素养，值得被做成开源、可参与、面向大众的东西</span>
+              <span class="k">approach</span><span class="v">基本要素拆解 + 逆向思维（如果我是用户，怎么更丝滑？）</span>
+              <span class="k">style</span><span class="v">边讨论边推进，不断迭代；讨厌一个人闷头想</span>
+              <span class="k">hate</span><span class="v">高高在上、冰冷没人情味、琐碎没含金量的杂活</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 02 现在在做什么 -->
+      <section id="now">
+        <div class="cmdline">
+          <span class="prompt">bolei@portfolio:~$</span>
+          <span class="cmd">ps aux</span> <span class="arg">--filter active</span>
+          <span class="cursor-b"></span>
+        </div>
+        <div class="proc-list">
+          <div class="proc-row">
+            <span class="proc-dot on"></span>
+            <span class="proc-name">icu-clinical</span>
+            <span class="proc-desc">杭州医学院护理专业 · ICU 临床实习轮转中</span>
+            <span class="proc-status run">RUNNING</span>
+          </div>
+          <div class="proc-row">
+            <span class="proc-dot on"></span>
+            <span class="proc-name">gosail-lab</span>
+            <span class="proc-desc">出海 AI MCN · Partnerships Manager（GoSail Lab / Neura Agency）</span>
+            <span class="proc-status run">RUNNING</span>
+          </div>
+          <div class="proc-row">
+            <span class="proc-dot on"></span>
+            <span class="proc-name">beichen-ai</span>
+            <span class="proc-desc">北辰青年 AI 线上实习 · 进阶阶段，一周一个真实交付</span>
+            <span class="proc-status run">RUNNING</span>
+          </div>
+          <div class="proc-row">
+            <span class="proc-dot on"></span>
+            <span class="proc-name">aesthetics-oss</span>
+            <span class="proc-desc">开源美学科普系列：字研室 / 好色之徒 / 光影志 / 色彩志</span>
+            <span class="proc-status run">RUNNING</span>
+          </div>
+          <div class="proc-row">
+            <span class="proc-dot wip"></span>
+            <span class="proc-name">learning-stack</span>
+            <span class="proc-desc">AI Agent 应用 · 市场营销 · 互联网运营 · 商务英语（雅思）</span>
+            <span class="proc-status learn">LEARNING</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 03 兴趣与链接 -->
+      <section id="interests">
+        <div class="cmdline">
+          <span class="prompt">bolei@portfolio:~$</span>
+          <span class="cmd">cat</span> <span class="arg">interests.conf</span>
+          <span class="cursor-b"></span>
+        </div>
+        <div class="info-grid">
+          <div class="info-col">
+            <div class="conf-block">
+              <div class="conf-comment">让眼睛发光的事</div>
+              <div class="conf-row"><span class="conf-key">read</span><span class="conf-pipe"> = </span><span class="conf-val">有意思的文章，深度的产品与人文内容</span></div>
+              <div class="conf-row"><span class="conf-key">build</span><span class="conf-pipe"> = </span><span class="conf-val">做有趣的项目：互动美学、学习工具、个人系统</span></div>
+              <div class="conf-row"><span class="conf-key">connect</span><span class="conf-pipe"> = </span><span class="conf-val">和人产生真实的链接，而不是名片式的社交</span></div>
+              <div class="conf-row"><span class="conf-key">listen</span><span class="conf-pipe"> = </span><span class="conf-val">小宇宙播客重度用户（还给主播做了卡片工具）</span></div>
+              <div class="conf-row"><span class="conf-key">live</span><span class="conf-pipe"> = </span><span class="conf-val">认真做饭、保持锻炼、早睡养生</span></div>
+            </div>
+          </div>
+          <div class="info-col">
+            <div class="conf-block">
+              <div class="conf-comment">想链接什么样的人</div>
+              <div class="conf-row" style="color:var(--pink)"><span class="conf-key">aesthetics</span><span class="conf-pipe"> = </span><span class="conf-val">做美学 / 设计 / 艺术教育的内容创作者</span></div>
+              <div class="conf-row" style="color:var(--pink)"><span class="conf-key">builders</span><span class="conf-pipe"> = </span><span class="conf-val">独立开发者、开源爱好者、AI 工具玩家</span></div>
+              <div class="conf-row" style="color:var(--pink)"><span class="conf-key">marketers</span><span class="conf-pipe"> = </span><span class="conf-val">出海营销 / KOL 运营 / 内容增长同行</span></div>
+              <div class="conf-row" style="color:var(--pink)"><span class="conf-key">mentors</span><span class="conf-pipe"> = </span><span class="conf-val">有创造力、鼓励型、愿意带新人的人</span></div>
+              <div class="conf-comment">难合作：高高在上、自大、PUA 型 — 直接过滤</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 04 创作方向 -->
+      <section id="direction">
+        <div class="cmdline">
+          <span class="prompt">bolei@portfolio:~$</span>
+          <span class="cmd">cat</span> <span class="arg">roadmap.md</span>
+          <span class="cursor-b"></span>
+        </div>
+        <div class="timeline">
+          <div class="tl-item">
+            <span class="tl-num">[01]</span>
+            <div class="tl-title">基础美学科普 · “三志”系列</div>
+            <div class="tl-desc">字体志 / 色彩志 / 光影志：把美院课堂里的观察练习，做成开源、可参与、面向大众的互动图谱。</div>
+          </div>
+          <div class="tl-item">
+            <span class="tl-num">[02]</span>
+            <div class="tl-title">互动式学习工具</div>
+            <div class="tl-desc">科学思维十五讲：15 知识点 + 7 个互动实验室 + 37 张复习卡片。让知识变成可操作、可核对的网页。</div>
+          </div>
+          <div class="tl-item">
+            <span class="tl-num">[03]</span>
+            <div class="tl-title">AI Agent 个人效率系统</div>
+            <div class="tl-desc">个人说明书、大学生工作台、求职 Skill、Agent 工作流——让文科生也能驾驭 AI 的整套方法论。</div>
+          </div>
+          <div class="tl-item">
+            <span class="tl-num">[04]</span>
+            <div class="tl-title">内容与品牌出海</div>
+            <div class="tl-desc">连接英语创作者与科技品牌：KOL 建联、内容视觉系统、个人品牌网站——把沟通变成可复用的资产。</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 05 作品集 -->
+      <section id="projects">
+        <div class="cmdline">
+          <span class="prompt">bolei@portfolio:~$</span>
+          <span class="cmd">ls</span> <span class="arg">-la ~/projects</span>
+          <span class="cursor-b"></span>
+        </div>
+
+        <!-- A 级 主推 -->
+        <div class="project-group">
+          <div class="pg-head"><span class="ls">drwxr-xr-x</span> 01_flagship/ <span class="total">5 个主推项目</span></div>
+          <div class="project-grid">
+            <div class="project-card featured">
+              <div class="pc-head">
+                <span class="pc-icon">▣</span>
+                <span class="pc-name">字研室 · Type Atlas</span>
+                <span class="pc-status live">● LIVE</span>
+              </div>
+              <div class="pc-desc">开源互动字体图谱：输入一句话，亲眼看见中英文字形如何改变语气与阅读感受。含学习路径、术语表、贡献指南。</div>
+              <div class="pc-meta">
+                <span class="lang"><span class="lang-dot" style="background:#3178c6"></span>TypeScript</span>
+                <span class="lang">2 stars</span>
+              </div>
+              <div class="pc-links">
+                <a href="https://github.com/tom61-bl/font-magazine-v1" target="_blank" rel="noopener">GitHub</a>
+                <a href="https://tom61-bl.github.io/font-magazine-v1/" target="_blank" rel="noopener">在线 Demo</a>
+              </div>
+            </div>
+            <div class="project-card featured">
+              <div class="pc-head">
+                <span class="pc-icon">▣</span>
+                <span class="pc-name">好色之徒 · Chromatic Atlas</span>
+                <span class="pc-status private">● PRIVATE</span>
+              </div>
+              <div class="pc-desc">互动色彩观察室：调整色相、明度、饱和度，换背景、改比例，看见颜色如何改变感受。筹备公开发布中。</div>
+              <div class="pc-meta">
+                <span class="lang"><span class="lang-dot" style="background:#3178c6"></span>TypeScript</span>
+              </div>
+              <div class="pc-links">
+                <a href="https://github.com/tom61-bl/haosezhitu" target="_blank" rel="noopener">GitHub</a>
+              </div>
+            </div>
+            <div class="project-card featured">
+              <div class="pc-head">
+                <span class="pc-icon">▣</span>
+                <span class="pc-name">科学思维十五讲</span>
+                <span class="pc-status live">● LIVE</span>
+              </div>
+              <div class="pc-desc">科学素养 = 科学知识 × 科学思维。15 个知识点 + 7 个互动实验室 + 37 张 Anki 复习卡片，单文件零依赖。</div>
+              <div class="pc-meta">
+                <span class="lang"><span class="lang-dot" style="background:#e34c26"></span>HTML</span>
+                <span class="lang">MIT</span>
+              </div>
+              <div class="pc-links">
+                <a href="https://github.com/tom61-bl/scientific-thinking-15" target="_blank" rel="noopener">GitHub</a>
+              </div>
+            </div>
+            <div class="project-card featured">
+              <div class="pc-head">
+                <span class="pc-icon">▣</span>
+                <span class="pc-name">大学生个人工作台</span>
+                <span class="pc-status live">● LIVE</span>
+              </div>
+              <div class="pc-desc">北辰青年 AI 实习第二周作业：每日三件事 / 倒计时 / 打卡 / 日记 / 计时器，一个文件装下整个工作台。</div>
+              <div class="pc-meta">
+                <span class="lang"><span class="lang-dot" style="background:#e34c26"></span>HTML</span>
+              </div>
+              <div class="pc-links">
+                <a href="https://github.com/tom61-bl/college-dashboard" target="_blank" rel="noopener">GitHub</a>
+                <a href="https://tom61-bl.github.io/college-dashboard/" target="_blank" rel="noopener">在线 Demo</a>
+              </div>
+            </div>
+            <div class="project-card featured">
+              <div class="pc-head">
+                <span class="pc-icon">▣</span>
+                <span class="pc-name">博磊的个人说明书</span>
+                <span class="pc-status live">● LIVE</span>
+              </div>
+              <div class="pc-desc">北辰青年 AI 实习第一周作业：一本可以翻开的书，写清我是谁、怎么合作、如何让我眼睛发光。</div>
+              <div class="pc-meta">
+                <span class="lang"><span class="lang-dot" style="background:#e34c26"></span>HTML</span>
+              </div>
+              <div class="pc-links">
+                <a href="https://github.com/tom61-bl/personal-manual" target="_blank" rel="noopener">GitHub</a>
+                <a href="https://tom61-bl.github.io/personal-manual/" target="_blank" rel="noopener">在线 Demo</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- B 级 美学系列 -->
+        <div class="project-group">
+          <div class="pg-head"><span class="ls">drwxr-xr-x</span> 02_aesthetics/ <span class="total">美学与排版</span></div>
+          <div class="project-grid">
+            <div class="project-card">
+              <div class="pc-head">
+                <span class="pc-icon">▣</span>
+                <span class="pc-name">光影志 · Light Shadow</span>
+                <span class="pc-status live">● LIVE</span>
+              </div>
+              <div class="pc-desc">“三志”系列之一：光影观察的互动杂志。</div>
+              <div class="pc-meta"><span class="lang"><span class="lang-dot" style="background:#f1e05a"></span>JavaScript</span></div>
+              <div class="pc-links">
+                <a href="https://github.com/tom61-bl/light-shadow" target="_blank" rel="noopener">GitHub</a>
+                <a href="https://tom61-bl.github.io/light-shadow/" target="_blank" rel="noopener">在线 Demo</a>
+              </div>
+            </div>
+            <div class="project-card">
+              <div class="pc-head">
+                <span class="pc-icon">▣</span>
+                <span class="pc-name">色彩图谱 · Color Atlas</span>
+                <span class="pc-status live">● LIVE</span>
+              </div>
+              <div class="pc-desc">色彩与感知的互动图谱。</div>
+              <div class="pc-meta"><span class="lang"><span class="lang-dot" style="background:#f1e05a"></span>JavaScript</span></div>
+              <div class="pc-links">
+                <a href="https://github.com/tom61-bl/color-atlas" target="_blank" rel="noopener">GitHub</a>
+                <a href="https://tom61-bl.github.io/color-atlas/" target="_blank" rel="noopener">在线 Demo</a>
+              </div>
+            </div>
+            <div class="project-card">
+              <div class="pc-head">
+                <span class="pc-icon">▣</span>
+                <span class="pc-name">英文排版基础知识</span>
+                <span class="pc-status live">● LIVE</span>
+              </div>
+              <div class="pc-desc">英文排版的入门知识图谱。</div>
+              <div class="pc-meta"><span class="lang"><span class="lang-dot" style="background:#e34c26"></span>HTML</span></div>
+              <div class="pc-links">
+                <a href="https://github.com/tom61-bl/english-typography-basic-knowledge-v1" target="_blank" rel="noopener">GitHub</a>
+                <a href="https://tom61-bl.github.io/english-typography-basic-knowledge-v1/" target="_blank" rel="noopener">在线 Demo</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- C 级 工具与互动 -->
+        <div class="project-group">
+          <div class="pg-head"><span class="ls">drwxr-xr-x</span> 03_tools/ <span class="total">工具与互动</span></div>
+          <div class="project-grid">
+            <div class="project-card">
+              <div class="pc-head">
+                <span class="pc-icon">▣</span>
+                <span class="pc-name">小宇宙卡片</span>
+                <span class="pc-status live">● LIVE</span>
+              </div>
+              <div class="pc-desc">播客链接一键生成精美分析卡片。</div>
+              <div class="pc-meta"><span class="lang"><span class="lang-dot" style="background:#e34c26"></span>HTML</span></div>
+              <div class="pc-links">
+                <a href="https://github.com/tom61-bl/xiaoyuzhou-cards" target="_blank" rel="noopener">GitHub</a>
+                <a href="https://tom61-bl.github.io/xiaoyuzhou-cards/" target="_blank" rel="noopener">在线 Demo</a>
+              </div>
+            </div>
+            <div class="project-card">
+              <div class="pc-head">
+                <span class="pc-icon">▣</span>
+                <span class="pc-name">Wonder Cards</span>
+                <span class="pc-status live">● LIVE</span>
+              </div>
+              <div class="pc-desc">精美卡片生成工具。</div>
+              <div class="pc-meta"><span class="lang"><span class="lang-dot" style="background:#e34c26"></span>HTML</span></div>
+              <div class="pc-links">
+                <a href="https://github.com/tom61-bl/wonder-cards" target="_blank" rel="noopener">GitHub</a>
+                <a href="https://tom61-bl.github.io/wonder-cards/" target="_blank" rel="noopener">在线 Demo</a>
+              </div>
+            </div>
+            <div class="project-card">
+              <div class="pc-head">
+                <span class="pc-icon">▣</span>
+                <span class="pc-name">Personal Radio</span>
+                <span class="pc-status live">● LIVE</span>
+              </div>
+              <div class="pc-desc">个人电台：自己的声音频道。</div>
+              <div class="pc-meta"><span class="lang"><span class="lang-dot" style="background:#f1e05a"></span>JavaScript</span></div>
+              <div class="pc-links">
+                <a href="https://github.com/tom61-bl/personal-radio" target="_blank" rel="noopener">GitHub</a>
+                <a href="https://tom61-bl.github.io/personal-radio/" target="_blank" rel="noopener">在线 Demo</a>
+              </div>
+            </div>
+            <div class="project-card">
+              <div class="pc-head">
+                <span class="pc-icon">▣</span>
+                <span class="pc-name">HTML Projects</span>
+                <span class="pc-status live">● LIVE</span>
+              </div>
+              <div class="pc-desc">像素游戏、沟通训练器（含金字塔沟通）、明信片等小项目集合。</div>
+              <div class="pc-meta"><span class="lang"><span class="lang-dot" style="background:#e34c26"></span>HTML</span></div>
+              <div class="pc-links">
+                <a href="https://github.com/tom61-bl/html-projects" target="_blank" rel="noopener">GitHub</a>
+                <a href="https://tom61-bl.github.io/html-projects/" target="_blank" rel="noopener">在线 Demo</a>
+              </div>
+            </div>
+            <div class="project-card">
+              <div class="pc-head">
+                <span class="pc-icon">▣</span>
+                <span class="pc-name">Flomo → Markdown</span>
+                <span class="pc-status live">● LIVE</span>
+              </div>
+              <div class="pc-desc">把 Flomo 网页导出为结构化 Markdown 的小工具。</div>
+              <div class="pc-meta"><span class="lang"><span class="lang-dot" style="background:#e34c26"></span>HTML</span></div>
+              <div class="pc-links">
+                <a href="https://github.com/tom61-bl/flomo-to-markdown" target="_blank" rel="noopener">GitHub</a>
+              </div>
+            </div>
+            <div class="project-card">
+              <div class="pc-head">
+                <span class="pc-icon">▣</span>
+                <span class="pc-name">八字学习指南</span>
+                <span class="pc-status live">● LIVE</span>
+              </div>
+              <div class="pc-desc">互动罗盘 + 间隔重复卡片，把传统文化做成可学的网页。</div>
+              <div class="pc-meta"><span class="lang"><span class="lang-dot" style="background:#e34c26"></span>HTML</span></div>
+              <div class="pc-links">
+                <a href="https://github.com/tom61-bl/bazi-study-guide" target="_blank" rel="noopener">GitHub</a>
+                <a href="https://tom61-bl.github.io/bazi-study-guide/" target="_blank" rel="noopener">在线 Demo</a>
+              </div>
+            </div>
+            <div class="project-card">
+              <div class="pc-head">
+                <span class="pc-icon">▣</span>
+                <span class="pc-name">Book to Garden</span>
+                <span class="pc-status live">● LIVE</span>
+              </div>
+              <div class="pc-desc">把读书笔记种成一座花园。</div>
+              <div class="pc-meta"><span class="lang"><span class="lang-dot" style="background:#3178c6"></span>TypeScript</span></div>
+              <div class="pc-links">
+                <a href="https://github.com/tom61-bl/book-to-garden" target="_blank" rel="noopener">GitHub</a>
+                <a href="https://tom61-bl.github.io/book-to-garden/" target="_blank" rel="noopener">在线 Demo</a>
+              </div>
+            </div>
+            <div class="project-card">
+              <div class="pc-head">
+                <span class="pc-icon">▣</span>
+                <span class="pc-name">指南系列</span>
+                <span class="pc-status live">● LIVE</span>
+              </div>
+              <div class="pc-desc">史记 / 音乐剧 / 舞剧入门指南，把兴趣做成可分享的知识页。</div>
+              <div class="pc-meta"><span class="lang"><span class="lang-dot" style="background:#e34c26"></span>HTML</span></div>
+              <div class="pc-links">
+                <a href="https://github.com/tom61-bl/shiji-guide" target="_blank" rel="noopener">GitHub</a>
+                <a href="https://tom61-bl.github.io/shiji-guide/" target="_blank" rel="noopener">Demo</a>
+              </div>
+            </div>
+            <div class="project-card">
+              <div class="pc-head">
+                <span class="pc-icon">▣</span>
+                <span class="pc-name">北辰 AI 实习招募页</span>
+                <span class="pc-status live">● LIVE</span>
+              </div>
+              <div class="pc-desc">北辰青年 AI 实习第四期招募网站。</div>
+              <div class="pc-meta"><span class="lang"><span class="lang-dot" style="background:#e34c26"></span>HTML</span></div>
+              <div class="pc-links">
+                <a href="https://github.com/tom61-bl/beichen-ai-internship" target="_blank" rel="noopener">GitHub</a>
+                <a href="https://tom61-bl.github.io/beichen-ai-internship/" target="_blank" rel="noopener">在线 Demo</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- D 级 求职 Skill -->
+        <div class="project-group">
+          <div class="pg-head"><span class="ls">drwxr-xr-x</span> 04_career/ <span class="total">求职方法论</span></div>
+          <div class="project-grid">
+            <div class="project-card featured">
+              <div class="pc-head">
+                <span class="pc-icon">▣</span>
+                <span class="pc-name">JD 定制与面试准备 Skill</span>
+                <span class="pc-status live">● LIVE</span>
+              </div>
+              <div class="pc-desc">jd-tailor-prep：10 步求职流程 — 素材核对 → JD 拆解 → 公司与生态位 → 匹配矩阵 → 价值主张 → 简历定制 → 面试题预测 → 话术卡片 → 投递文本 → 自检复盘。铁律：不编造、事实与推断分开、AI 不代发。</div>
+              <div class="pc-meta">
+                <span class="lang"><span class="lang-dot" style="background:#c8d3e0"></span>Markdown</span>
+              </div>
+              <div class="pc-links">
+                <a href="https://github.com/tom61-bl/bolei-os/blob/main/jd-tailor-prep.md" target="_blank" rel="noopener">仓库文件</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 06 联系 -->
+      <section id="contact">
+        <div class="cmdline">
+          <span class="prompt">bolei@portfolio:~$</span>
+          <span class="cmd">contact</span>
+          <span class="cursor-b"></span>
+        </div>
+        <div class="contact-grid">
+          <div class="contact-card">
+            <div class="cc-label">// github</div>
+            <div class="cc-value"><a href="https://github.com/tom61-bl" target="_blank" rel="noopener">github.com/tom61-bl</a></div>
+          </div>
+          <div class="contact-card">
+            <div class="cc-label">// work x</div>
+            <div class="cc-value"><a href="https://x.com/GoSailGlobal" target="_blank" rel="noopener">x.com/GoSailGlobal</a></div>
+          </div>
+          <div class="contact-card">
+            <div class="cc-label">// location</div>
+            <div class="cc-value">杭州 · 可远程</div>
+          </div>
+          <div class="contact-card">
+            <div class="cc-label">// status</div>
+            <div class="cc-value"><span style="color:var(--green)">●</span> 欢迎链接与交流</div>
+          </div>
+        </div>
+
+        <!-- 命令行交互 -->
+        <div id="cmdline-wrap">
+          <div class="cl-input-row">
+            <span class="prompt">bolei@portfolio:~$</span>
+            <input class="cl-input" id="clInput" type="text" placeholder="输入 help 查看可用命令" autocomplete="off" spellcheck="false" aria-label="命令行输入">
+          </div>
+          <div class="cl-log" id="clLog"></div>
+        </div>
+      </section>
+
+      <footer>
+        <div class="f-comment">// made with curiosity and caffeine — 博磊</div>
+        <div style="margin-top:6px;"><span class="f-green">28</span> repositories on GitHub · 持续迭代中</div>
+      </footer>
+
+    </div><!-- /term-body -->
+  </div><!-- /term-window -->
+</div>
+
+<script>
+/* ============ Boot Sequence ============ */
+(function () {
+  var bootLines = [
+    { t: 'BOLEI.OS v2.0 — booting kernel...', c: '' },
+    { t: '[OK] mounting /dev/passion', c: 'ok' },
+    { t: '[OK] loading aesthetics modules ...', c: 'ok' },
+    { t: '[OK] starting agent daemon', c: 'ok' },
+    { t: '[OK] 28 repositories detected', c: 'ok' },
+    { t: '[OK] connecting to ICU 7F — vitals stable', c: 'ok' },
+    { t: '[OK] welcome, bó lěi', c: 'ok' },
+    { t: 'press any key to continue _', c: 'hint' }
+  ];
+  var bootEl = document.getElementById('boot');
+  var linesEl = document.getElementById('bootLines');
+  var i = 0;
+  var bootTimer = null;
+
+  function typeLine(idx) {
+    if (idx >= bootLines.length) { bootTimer = setTimeout(skipBoot, 1200); return; }
+    var line = bootLines[idx];
+    var p = document.createElement('p');
+    if (line.c === 'ok') { p.className = 'boot-ok'; p.textContent = line.t; }
+    else if (line.c === 'hint') { p.className = 'boot-hint'; p.textContent = line.t; }
+    else { p.textContent = line.t; }
+    linesEl.appendChild(p);
+    var cursor = document.createElement('span');
+    cursor.className = 'boot-cursor';
+    p.appendChild(cursor);
+    if (idx < bootLines.length - 1) linesEl.scrollTop = linesEl.scrollHeight;
+    bootTimer = setTimeout(function () { if (cursor.parentNode) cursor.remove(); typeLine(idx + 1); }, line.c === 'hint' ? 400 : 260);
+  }
+
+  function skipBoot() {
+    if (bootTimer) clearTimeout(bootTimer);
+    bootEl.classList.add('hidden');
+  }
+
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    var flat = bootLines.map(function (l) { return l.t.replace(' _', ''); }).join('\n');
+    linesEl.innerHTML = '';
+    var pre = document.createElement('p');
+    pre.style.whiteSpace = 'pre-wrap';
+    pre.textContent = flat;
+    linesEl.appendChild(pre);
+    bootTimer = setTimeout(skipBoot, 900);
+  } else {
+    typeLine(0);
+  }
+  bootEl.addEventListener('click', skipBoot);
+  document.addEventListener('keydown', function (e) {
+    if (!bootEl.classList.contains('hidden')) skipBoot();
+  });
+})();
+
+/* ============ 导航 ============ */
+var navBtns = document.querySelectorAll('.nav-cmd');
+navBtns.forEach(function (btn) {
+  btn.addEventListener('click', function () {
+    var target = btn.getAttribute('data-cmd');
+    var el = document.getElementById(target);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+});
+
+/* ============ 命令行交互 ============ */
+var clInput = document.getElementById('clInput');
+var clLog = document.getElementById('clLog');
+var logged = false;
+
+function cmdLog(html) {
+  var p = document.createElement('p');
+  p.innerHTML = html;
+  clLog.appendChild(p);
+  while (clLog.childNodes.length > 40) clLog.removeChild(clLog.firstChild);
+}
+
+function runCommand(raw) {
+  var input = raw.trim();
+  if (!input) return;
+  cmdLog('<span class="prompt" style="color:var(--green)">bolei@portfolio:~$</span> <span style="color:#eafff5">' + escapeHtml(input) + '</span>');
+  var cmd = input.split(/\s+/)[0].toLowerCase();
+  var known = ['whoami', 'now', 'interests', 'direction', 'projects', 'contact', 'help', 'clear', 'github', 'sudo', 'ls', 'cat', 'ps'];
+  switch (cmd) {
+    case 'help':
+      cmdLog('<span class="green">可用命令：</span><br>whoami — 我是谁<br>ps — 现在在做什么<br>cat interests.conf — 兴趣与链接<br>cat roadmap.md — 创作方向<br>ls — 作品集<br>github — 打开 GitHub<br>clear — 清空<br>sudo — 试试看？');
+      break;
+    case 'whoami': scrollTo('whoami'); break;
+    case 'ps': scrollTo('now'); break;
+    case 'now': scrollTo('now'); break;
+    case 'cat':
+      if (input.indexOf('interests') > -1) scrollTo('interests');
+      else if (input.indexOf('roadmap') > -1) scrollTo('direction');
+      else cmdLog('<span class="amber">cat: no such file</span> — 试试 cat interests.conf 或 cat roadmap.md');
+      break;
+    case 'ls': scrollTo('projects'); break;
+    case 'projects': scrollTo('projects'); break;
+    case 'contact': scrollTo('contact'); break;
+    case 'github': window.open('https://github.com/tom61-bl', '_blank'); cmdLog('<span class="green">opening github.com/tom61-bl ...</span>'); break;
+    case 'clear':
+      clLog.innerHTML = '';
+      logged = true;
+      break;
+    case 'sudo':
+      cmdLog('<span class="amber">nice try. 这个终端没有 root 权限。</span>');
+      break;
+    default:
+      if (known.indexOf(cmd) > -1) cmdLog('<span class="amber">command not found: ' + escapeHtml(cmd) + ' — 用法见 help</span>');
+      else cmdLog('<span class="amber">command not found: ' + escapeHtml(cmd) + '</span> — 输入 help 查看可用命令');
+  }
+  if (cmd !== 'clear') logged = true;
+}
+
+function scrollTo(id) {
+  var el = document.getElementById(id);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function escapeHtml(s) {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+clInput.addEventListener('keydown', function (e) {
+  if (e.key === 'Enter') { runCommand(clInput.value); clInput.value = ''; }
+});
+
+/* 首次进入聚焦提示 */
+clInput.addEventListener('focus', function () {
+  if (!logged) { cmdLog('<span class="cyan">// 试着输入 help 开始探索</span>'); logged = true; }
+});
+</script>
+
+</body>
+</html>
